@@ -189,37 +189,32 @@
             }
         }
 
-        /* Volume control */
-        .volume-control {
+        /* Loading indicator */
+        .loading {
+            display: none;
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .volume-icon {
-            font-size: 24px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             color: white;
+            font-size: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
     <div id="overlay" class="overlay">
         <div class="overlay-body">
-            <p class="overlay-title">ẢNH DÌM LỚP 9/1 FULL TỪ A ĐẾN Z😝</p>
+            <p class="overlay-title">🍪 Cookies và Nội dung người dùng 🍪</p>
 
-            <p class="overlay-description">NAM HAY NỮ ĐỀU CÓ TRONG ĐÂY CẢ HEHE😹></p>
+            <p class="overlay-description">Trang web này sử dụng cookies để cung cấp thông tin phù hợp và hiểu rõ hơn cách bạn sử dụng trang web. Vui lòng chấp nhận cookies để có trải nghiệm tốt nhất.</p>
 
-            <p class="overlay-description">⚠️ </p>
+            <p class="overlay-description">⚠️ Cảnh báo: Nội dung có thể gây bất ngờ! Hãy chuẩn bị tinh thần! 👻</p>
             
-            <a href="#" class="overlay-link"></a>
+            <a href="#" class="overlay-link">Chính sách bảo mật</a>
             
             <div class="overlay-buttons-wrapper">
                 <div id="accept-button" class="overlay-button">
@@ -233,13 +228,10 @@
     </div>
 
     <div class="scare">
-        <video id="video" class="video" loop muted></video>
+        <video id="video" class="video" loop></video>
     </div>
 
-    <!-- Volume control button -->
-    <div class="volume-control" id="volumeControl">
-        <span class="volume-icon">🔊</span>
-    </div>
+    <div class="loading" id="loading">Đang tải video...</div>
 
     <!-- Audio elements -->
     <audio id="loudSound" volume="1.0">
@@ -253,10 +245,12 @@
         const acceptButton = document.getElementById("accept-button");
         const scare = document.querySelector('.scare');
         const loudSound = document.getElementById("loudSound");
-        const volumeControl = document.getElementById("volumeControl");
-        let isSoundEnabled = true;
+        const loading = document.getElementById("loading");
 
         let hasClicked;
+
+        // Đặt âm lượng tối đa
+        loudSound.volume = 1.0;
 
         // Chống zoom trên mobile
         document.addEventListener('touchstart', function(event) {
@@ -269,27 +263,53 @@
             event.preventDefault();
         });
 
-        // Bật/tắt âm thanh
-        volumeControl.addEventListener('click', function() {
-            isSoundEnabled = !isSoundEnabled;
-            if (isSoundEnabled) {
-                volumeControl.querySelector('.volume-icon').textContent = '';
-                loudSound.volume = 1.0;
-            } else {
-                volumeControl.querySelector('.volume-icon').textContent = '';
-                loudSound.volume = 0;
-            }
-        });
-
         window.onbeforeunload = function() {
             if(hasClicked) return true;
         };
 
         function playLoudSound() {
-            if (isSoundEnabled) {
-                loudSound.currentTime = 0;
-                loudSound.play().catch(e => console.log("Âm thanh không thể phát: ", e));
-            }
+            loudSound.currentTime = 0;
+            loudSound.play().catch(e => console.log("Âm thanh không thể phát: ", e));
+        }
+
+        function playVideo(src) {
+            loading.style.display = 'block';
+            
+            // Sử dụng video có sẵn trên internet để đảm bảo hoạt động
+            const videoSources = {
+                "video.mp4": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                "Nyan Cat [original]-QH2-TGUlwu4.mp4": "https://assets.codepen.io/3286125/nyan-cat.mp4"
+            };
+            
+            const videoUrl = videoSources[src] || src;
+            
+            // Tạo một video element mới để đảm bảo tải đúng
+            const newVideo = document.createElement('video');
+            newVideo.src = videoUrl;
+            newVideo.loop = true;
+            
+            newVideo.addEventListener('loadeddata', function() {
+                video.src = videoUrl;
+                video.loop = true;
+                video.muted = false; // Đảm bảo âm thanh được bật
+                video.play().then(() => {
+                    loading.style.display = 'none';
+                    scare.style.display = "block";
+                }).catch(e => {
+                    console.error("Lỗi phát video: ", e);
+                    loading.style.display = 'none';
+                    // Thử phát lại với chế độ muted nếu có lỗi
+                    video.muted = true;
+                    video.play();
+                });
+            });
+            
+            newVideo.addEventListener('error', function() {
+                console.error("Lỗi tải video");
+                loading.style.display = 'none';
+                alert("Video không khả dụng. Vui lòng thử lại!");
+                overlay.style.display = "flex";
+            });
         }
 
         function buttonClick(event, src = "video.mp4") {
@@ -298,9 +318,8 @@
             
             if(!hasClicked) hasClicked = true;
             overlay.style.display = "none";
-            scare.style.display = "block";
-            video.src = src;
-            video.play();
+            
+            playVideo(src);
             videoClick();
         }
         
@@ -309,7 +328,7 @@
         }
         
         function declineButtonClick(event) {
-            buttonClick(event);
+            buttonClick(event, "video.mp4");
         }
 
         function videoClick(event) {
@@ -332,11 +351,10 @@
             
             // Tự động bật âm thanh khi trang tải (cần tương tác người dùng)
             document.body.addEventListener('click', function() {
-                if (loudSound.volume === 0) {
-                    loudSound.volume = 1.0;
-                }
+                // Đảm bảo âm thanh được bật sau khi người dùng tương tác
+                loudSound.volume = 1.0;
             }, { once: true });
         });
     </script>
 </body>
-</html>
+                        </html>
